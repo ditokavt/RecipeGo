@@ -1,0 +1,271 @@
+// 1. ცვლადები და თემები
+:root[data-theme='light'] {
+  --bg: #f4f4f4;
+  --card-bg: #fff;
+  --text: #333;
+  --accent: #ff6347;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme='dark'] {
+  --bg: #121212;
+  --card-bg: #1e1e1e;
+  --text: #fff;
+  --accent: #ff4500;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+// 2. ბაზისური პარამეტრები
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  transition: 0.3s;
+}
+
+// 3. მთავარი კონტეინერი - 1400px
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// 4. ნავიგაცია (შენი ახალი მოთხოვნით)
+.navbar {
+  width: 100%;
+  background: var(--card-bg);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+
+  .nav-container {
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+
+    .logo {
+      flex: 1; // იკავებს მარცხენა მხარეს
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--accent);
+      text-decoration: none;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .nav-right-side {
+      flex: 1; // იკავებს მარჯვენა მხარეს
+      display: flex;
+      justify-content: space-between; // შლის ელემენტებს ბოლოებში
+      align-items: center;
+    }
+  }
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+
+  a {
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 500;
+    transition: 0.3s;
+
+    &.active {
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 5px;
+    }
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+}
+
+.nav-controls {
+  display: flex;
+  gap: 15px;
+
+  button {
+    background: var(--bg);
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text);
+    font-weight: bold;
+    transition: 0.3s;
+
+    &:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+  }
+}
+
+// 5. კატეგორიები
+.categories-wrapper {
+  margin-top: 80px;
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+
+    button {
+      padding: 10px 20px;
+      border-radius: 25px;
+      border: 1px solid #ddd;
+      background: var(--card-bg);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.3s;
+
+      &:hover, &.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+        box-shadow: 0 4px 10px rgba(255, 99, 71, 0.3);
+      }
+    }
+  }
+}
+
+// 6. რეცეპტების ბადე (3 სვეტი 1400px-ზე)
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 35px;
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px 0;
+
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 700px) { grid-template-columns: 1fr; }
+}
+
+// 7. ბარათი
+.card {
+  background: var(--card-bg);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px var(--shadow);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+
+  &:hover { transform: translateY(-5px); }
+
+  img { width: 100%; height: 230px; object-fit: cover; }
+
+  .info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    h3 { margin: 0; font-size: 1.2rem; text-align: center; }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between; // ნახვა მარცხნივ, გული მარჯვნივ
+      align-items: center;
+      margin-top: 10px;
+
+      .view-btn {
+        padding: 8px 18px;
+        border: 2px solid var(--accent);
+        border-radius: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: 0.3s;
+
+        &:hover {
+          background: var(--accent);
+          color: white;
+        }
+      }
+
+      .fav-btn {
+        background: none;
+        border: none;
+        font-size: 1.6rem;
+        cursor: pointer;
+        color: var(--accent);
+        padding: 0;
+        display: flex;
+        align-items: center;
+        transition: 0.2s;
+        &:hover { transform: scale(1.1); }
+      }
+    }
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  
+  h2 { margin-top: 0; color: var(--accent); }
+  
+  input, textarea {
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+}
+
+.details-header {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 40px;
+  @media (max-width: 768px) { flex-direction: column; }
+}
+
+.details-img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 20px;
+  box-shadow: 0 10px 20px var(--shadow);
+}

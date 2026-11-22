@@ -6,7 +6,7 @@ import './recipego.css';
 const LOCAL_KEY = 'recipego-community-recipes-v3';
 const FAV_KEY = 'recipego-favorites-v3';
 const API = 'https://www.themealdb.com/api/json/v1/1';
-const defaultImage = 'https://images.unsplash.com/photo-1547592180-85f173990554?w=1100&q=80';
+const defaultImage = `${import.meta.env.BASE_URL}recipego-hero.webp`;
 const filters = ['All', 'Breakfast', 'Starter', 'Pasta', 'Seafood', 'Vegetarian', 'Vegan', 'Chicken', 'Beef', 'Dessert', 'Miscellaneous'];
 const categories = filters.filter((x) => x !== 'All');
 function localRead(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
@@ -27,17 +27,65 @@ function useRecipes() {
 }
 function Header({ favoriteCount }) {
   const [open, setOpen] = useState(false);
-  return <header className="rg-header"><div className="rg-shell rg-header-inner"><Link to="/" className="rg-brand" onClick={() => setOpen(false)}><span>✳</span> recipe<span className="rg-brand-dot">go</span></Link><button className="rg-menu-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle menu">{open ? '✕' : '☰'}</button><nav className={`rg-nav ${open ? 'is-open' : ''}`} aria-label="Main navigation"><NavLink to="/" end onClick={() => setOpen(false)}>Discover</NavLink><NavLink to="/favorites" onClick={() => setOpen(false)}>Saved <span className="rg-count">{favoriteCount}</span></NavLink><NavLink to="/add-recipe" className="rg-nav-cta" onClick={() => setOpen(false)}>＋ Share a recipe</NavLink></nav></div></header>;
+  return <header className="rg-header"><div className="rg-shell rg-header-inner"><Link to="/" className="rg-brand" onClick={() => setOpen(false)}>Recipe<span className="rg-brand-dot">Go</span></Link><button className="rg-menu-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Toggle menu">{open ? '✕' : '☰'}</button><nav className={`rg-nav ${open ? 'is-open' : ''}`} aria-label="Main navigation"><NavLink to="/" end onClick={() => setOpen(false)}>Discover</NavLink><NavLink to="/favorites" onClick={() => setOpen(false)}>Saved <span className="rg-count">{favoriteCount}</span></NavLink><NavLink to="/add-recipe" className="rg-nav-cta" onClick={() => setOpen(false)}>＋ Share a recipe</NavLink></nav></div></header>;
+}
+function HeartIcon({ filled }) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" width="21" height="21" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0L12 5.95l-1.05-1.05a5.5 5.5 0 0 0-7.8 7.8l1.05 1.05L12 21l7.8-7.25 1.05-1.05a5.5 5.5 0 0 0-.05-7.8Z" /></svg>;
 }
 function RecipeCard({ recipe, favorites, toggleFav }) {
   const liked = favorites.includes(recipe.idMeal);
-  return <article className="rg-card"><Link to={`/recipe/${recipe.idMeal}`} className="rg-card-image"><img src={recipe.strMealThumb || defaultImage} loading="lazy" alt={recipe.strMeal} onError={(e) => { e.currentTarget.src = defaultImage; }}/><span className="rg-chip">{recipe.strCategory || 'Recipe'}</span></Link><div className="rg-card-body"><div className="rg-card-eyebrow">{recipe.strArea || 'Home cooking'} {recipe.duration ? `· ${recipe.duration} min` : ''}</div><Link to={`/recipe/${recipe.idMeal}`} className="rg-card-title">{recipe.strMeal}</Link><div className="rg-card-bottom"><span>{recipe.isCommunity ? `By ${recipe.author}` : 'Recipe inspiration'}</span><button aria-label={liked ? 'Remove from saved recipes' : 'Save recipe'} className={`rg-heart ${liked ? 'active' : ''}`} onClick={() => toggleFav(recipe)}>{liked ? '♥' : '♡'}</button></div></div></article>;
+  return <article className="rg-card"><Link to={`/recipe/${recipe.idMeal}`} className="rg-card-image"><img src={recipe.strMealThumb || defaultImage} loading="lazy" alt={recipe.strMeal} onError={(e) => { if (!e.currentTarget.src.endsWith("recipego-hero.webp")) e.currentTarget.src = defaultImage; }}/><span className="rg-chip">{recipe.strCategory || 'Recipe'}</span></Link><div className="rg-card-body"><div className="rg-card-eyebrow">{recipe.strArea || 'Home cooking'} {recipe.duration ? `· ${recipe.duration} min` : ''}</div><Link to={`/recipe/${recipe.idMeal}`} className="rg-card-title">{recipe.strMeal}</Link><div className="rg-card-bottom"><span>{recipe.isCommunity ? `By ${recipe.author}` : 'Recipe inspiration'}</span><button aria-label={liked ? 'Remove from saved recipes' : 'Save recipe'} className={`rg-heart ${liked ? 'active' : ''}`} onClick={() => toggleFav(recipe)}>{<HeartIcon filled={liked} />}</button></div></div></article>;
 }
 function Home({ data }) {
   const [category, setCategory] = useState('All'); const [search, setSearch] = useState(''); const [sort, setSort] = useState('latest'); const [apiMeals, setApiMeals] = useState([]); const [loading, setLoading] = useState(true); const [apiError, setApiError] = useState('');
-  useEffect(() => { let cancelled = false; setLoading(true); setApiError(''); const task = category === 'All' ? getMeals('search.php?s=') : getMeals(`filter.php?c=${encodeURIComponent(category)}`); task.then((items) => { if (!cancelled) setApiMeals(items); }).catch(() => { if (!cancelled) setApiError('Could not load external recipes. Community recipes remain available.'); }).finally(() => { if (!cancelled) setLoading(false); }); return () => { cancelled = true; }; }, [category]);
-  const recipes = useMemo(() => { const all = [...data.community, ...apiMeals]; const seen = new Set(); const filtered = all.filter((r) => { const id = String(r.idMeal); if (seen.has(id)) return false; seen.add(id); return (category === 'All' || r.strCategory === category) && `${r.strMeal} ${r.strCategory} ${r.strArea}`.toLowerCase().includes(search.toLowerCase()); }); if (sort === 'az') filtered.sort((a, b) => a.strMeal.localeCompare(b.strMeal)); if (sort === 'quick') filtered.sort((a, b) => (a.duration || 999) - (b.duration || 999)); return filtered; }, [data.community, apiMeals, search, category, sort]);
-  return <><section className="rg-hero"><div className="rg-shell rg-hero-inner"><div><p className="rg-kicker">GOOD FOOD · GOOD PEOPLE</p><h1>Cook something <em>amazing.</em></h1><p className="rg-hero-desc">Discover new favorites, explore delicious ideas, and share what you love to cook.</p><div className="rg-hero-actions"><a href="#browse" className="rg-button rg-button-primary">Explore recipes <span>↗</span></a><Link to="/add-recipe" className="rg-button rg-button-outline">Share your recipe</Link></div><div className="rg-hero-foot"><span>✦ Community-powered inspiration</span><span>✦ Free for everyone</span></div></div><div className="rg-hero-photo" role="img" aria-label="Fresh dish on a rustic table"><span>MADE WITH LOVE ✳</span></div></div></section><section className="rg-shell rg-content" id="browse"><div className="rg-section-heading"><div><p className="rg-kicker">THE RECIPE COLLECTION</p><h2>Find your next favorite.</h2></div><p>Something delicious for every day.</p></div><div className="rg-toolbar"><label className="rg-search"><span aria-hidden="true">⌕</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search recipes, cuisine, ingredients..." aria-label="Search recipes" /></label><label className="rg-sort">Sort <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">Featured</option><option value="az">Name A–Z</option><option value="quick">Quickest first</option></select></label></div><div className="rg-categories">{filters.map((c) => <button key={c} className={category === c ? 'selected' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>{apiError && <p className="rg-notice">{apiError}</p>}<div className="rg-result-info"><strong>{recipes.length}</strong> recipes found {loading ? '· Loading more...' : ''}</div><div className="rg-grid">{recipes.map((recipe) => <RecipeCard key={recipe.idMeal} recipe={recipe} favorites={data.favorites} toggleFav={data.toggleFav}/>)}</div>{!loading && !recipes.length && <div className="rg-empty"><h3>No recipes yet</h3><p>Try another search or be the first to share one.</p><Link to="/add-recipe" className="rg-button rg-button-primary">Add recipe</Link></div>}</section></>;
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setApiError('');
+      try {
+        const query = search.trim();
+        // TheMealDB filter.php omits strCategory/strArea. Fill the selected
+        // category explicitly instead of filtering those results out.
+        let meals;
+        if (query) {
+          meals = await getMeals(`search.php?s=${encodeURIComponent(query)}`);
+        } else if (category !== 'All') {
+          meals = (await getMeals(`filter.php?c=${encodeURIComponent(category)}`))
+            .map((m) => ({ ...m, strCategory: category }));
+        } else {
+          meals = await getMeals('search.php?s=');
+        }
+        if (!cancelled) setApiMeals(meals);
+      } catch {
+        if (!cancelled) {
+          setApiMeals([]);
+          setApiError('Online recipes could not load. Your own saved recipes are still available.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, search.trim() ? 300 : 0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [category, search]);
+  const recipes = useMemo(() => {
+    const seen = new Set();
+    const query = search.trim().toLocaleLowerCase();
+    const items = [...data.community, ...apiMeals].filter((r) => {
+      const id = String(r.idMeal);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      const matchesCategory = category === 'All' ||
+        (r.strCategory || '').toLocaleLowerCase() === category.toLocaleLowerCase();
+      const ingredientText = (r.ingredients || []).join(' ');
+      const searchable = `${r.strMeal || ''} ${r.strCategory || ''} ${r.strArea || ''} ${ingredientText}`.toLocaleLowerCase();
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+    if (sort === 'az') items.sort((a, b) => a.strMeal.localeCompare(b.strMeal));
+    if (sort === 'quick') items.sort((a, b) => (Number(a.duration) || Infinity) - (Number(b.duration) || Infinity));
+    return items;
+  }, [data.community, apiMeals, search, category, sort]);
+  return <><section className="rg-hero"><div className="rg-shell rg-hero-inner"><div><p className="rg-kicker">GOOD FOOD · GOOD PEOPLE</p><h1>Cook something <em>amazing.</em></h1><p className="rg-hero-desc">Discover new favorites, explore delicious ideas, and share what you love to cook.</p><div className="rg-hero-actions"><a href="#browse" className="rg-button rg-button-primary">Explore recipes <span>↗</span></a><Link to="/add-recipe" className="rg-button rg-button-outline">Share your recipe</Link></div><div className="rg-hero-foot"><span>✦ Community-powered inspiration</span><span>✦ Free for everyone</span></div></div><div className="rg-hero-photo"><img src={defaultImage} alt="Fresh pasta with basil and tomatoes" /></div></div></section><section className="rg-shell rg-content" id="browse"><div className="rg-section-heading"><div><p className="rg-kicker">THE RECIPE COLLECTION</p><h2>Find your next favorite.</h2></div><p>Something delicious for every day.</p></div><div className="rg-toolbar"><label className="rg-search"><span aria-hidden="true">⌕</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search recipes, cuisine, ingredients..." aria-label="Search recipes" /></label><label className="rg-sort">Sort <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">Featured</option><option value="az">Name A–Z</option><option value="quick">Quickest first</option></select></label></div><div className="rg-categories">{filters.map((c) => <button key={c} className={category === c ? 'selected' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>{apiError && <p className="rg-notice">{apiError}</p>}<div className="rg-result-info"><strong>{recipes.length}</strong> recipes found {loading ? '· Loading more...' : ''}</div><div className="rg-grid">{recipes.map((recipe) => <RecipeCard key={recipe.idMeal} recipe={recipe} favorites={data.favorites} toggleFav={data.toggleFav}/>)}</div>{!loading && !recipes.length && <div className="rg-empty"><h3>No recipes yet</h3><p>Try another search or be the first to share one.</p><Link to="/add-recipe" className="rg-button rg-button-primary">Add recipe</Link></div>}</section></>;
 }
 function AddRecipe({ data }) {
   const [form, setForm] = useState({ title: '', image_url: '', category: 'Pasta', cuisine: '', ingredients: '', instructions: '', duration: 30, author: '' }); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const navigate = useNavigate();
@@ -50,11 +98,11 @@ function RecipeDetails({ data }) {
   const community = data.community.find((r) => r.idMeal === id); const saved = data.favorites.includes(id);
   useEffect(() => { if (community) { setLoading(false); return; } let live = true; setLoading(true); getMeals(`lookup.php?i=${encodeURIComponent(id)}`).then((items) => { if (live) setApi(items[0] || null); }).catch(() => { if (live) setApi(null); }).finally(() => { if (live) setLoading(false); }); return () => { live = false; }; }, [id, community]);
   const recipe = community || api; const ingredients = recipe?.ingredients || (recipe ? Array.from({ length: 20 }, (_, i) => { const x = i + 1; const name = recipe[`strIngredient${x}`]; return name ? `${recipe[`strMeasure${x}`] || ''} ${name}`.trim() : null; }).filter(Boolean) : []);
-  return <main className="rg-shell rg-details"><Link to="/" className="rg-back">← Back to recipes</Link>{loading ? <p>Loading recipe...</p> : !recipe ? <div className="rg-empty"><h2>Recipe not found</h2><Link to="/">Browse other recipes</Link></div> : <><div className="rg-details-head"><div><p className="rg-kicker">{recipe.strCategory || 'HOMEMADE'} · {recipe.strArea || 'Community'}</p><h1>{recipe.strMeal}</h1><p>Good food is worth sharing. Enjoy every bite.</p><button className="rg-button rg-button-outline" onClick={() => data.toggleFav(recipe)}>{saved ? '♥ Saved recipe' : '♡ Save for later'}</button></div><img src={recipe.strMealThumb || defaultImage} alt={recipe.strMeal}/></div><div className="rg-recipe-columns"><section><h2>Ingredients</h2><ul>{ingredients.map((item, i) => <li key={i}>{item}</li>)}</ul></section><section><h2>Instructions</h2><p className="rg-instructions">{recipe.strInstructions || 'Instructions unavailable.'}</p></section></div></>}</main>;
+  return <main className="rg-shell rg-details"><Link to="/" className="rg-back">← Back to recipes</Link>{loading ? <p>Loading recipe...</p> : !recipe ? <div className="rg-empty"><h2>Recipe not found</h2><Link to="/">Browse other recipes</Link></div> : <><div className="rg-details-head"><div><p className="rg-kicker">{recipe.strCategory || 'HOMEMADE'} · {recipe.strArea || 'Community'}</p><h1>{recipe.strMeal}</h1><p>Good food is worth sharing. Enjoy every bite.</p><button className="rg-button rg-button-outline" onClick={() => data.toggleFav(recipe)}><HeartIcon filled={saved}/>{saved ? 'Saved recipe' : 'Save for later'}</button></div><img src={recipe.strMealThumb || defaultImage} alt={recipe.strMeal}/></div><div className="rg-recipe-columns"><section><h2>Ingredients</h2><ul>{ingredients.map((item, i) => <li key={i}>{item}</li>)}</ul></section><section><h2>Instructions</h2><p className="rg-instructions">{recipe.strInstructions || 'Instructions unavailable.'}</p></section></div></>}</main>;
 }
 function Favorites({ data }) {
   const [external, setExternal] = useState([]); const [loading, setLoading] = useState(false);
   useEffect(() => { let alive = true; const missing = data.favorites.filter((id) => !data.community.some((r) => r.idMeal === id)); if (!missing.length) { setExternal([]); return; } setLoading(true); Promise.all(missing.map((id) => getMeals(`lookup.php?i=${encodeURIComponent(id)}`).then((r) => r[0]).catch(() => null))).then((items) => { if (alive) setExternal(items.filter(Boolean)); }).finally(() => { if (alive) setLoading(false); }); return () => { alive = false; }; }, [data.community, data.favorites]);
   const recipes = [...data.community, ...external].filter((r) => data.favorites.includes(r.idMeal)); return <main className="rg-shell rg-content"><p className="rg-kicker">YOUR COLLECTION</p><h1>Saved recipes <span>♥</span></h1><p>Keep the dishes you love close.</p>{loading && <p>Loading saved recipes...</p>}<div className="rg-grid">{recipes.map((r) => <RecipeCard key={r.idMeal} recipe={r} favorites={data.favorites} toggleFav={data.toggleFav}/>)}</div>{!recipes.length && !loading && <div className="rg-empty"><h2>Nothing saved yet</h2><Link to="/" className="rg-button rg-button-primary">Explore recipes</Link></div>}</main>;
 }
-export default function App() { const data = useRecipes(); return <BrowserRouter><Header favoriteCount={data.favorites.length}/><Routes><Route path="/" element={<Home data={data}/>}/><Route path="/add-recipe" element={<AddRecipe data={data}/>}/><Route path="/recipe/:id" element={<RecipeDetails data={data}/>}/><Route path="/favorites" element={<Favorites data={data}/>}/><Route path="*" element={<Home data={data}/>}/></Routes><footer className="rg-footer"><div className="rg-shell">Made to share. Cook with joy. <strong>recipego ✳</strong></div></footer></BrowserRouter>; }
+export default function App() { const data = useRecipes(); return <BrowserRouter><Header favoriteCount={data.favorites.length}/><Routes><Route path="/" element={<Home data={data}/>}/><Route path="/add-recipe" element={<AddRecipe data={data}/>}/><Route path="/recipe/:id" element={<RecipeDetails data={data}/>}/><Route path="/favorites" element={<Favorites data={data}/>}/><Route path="*" element={<Home data={data}/>}/></Routes><footer className="rg-footer"><div className="rg-shell">Made to share. Cook with joy. <strong>RecipeGo</strong></div></footer></BrowserRouter>; }
